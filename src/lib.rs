@@ -270,6 +270,22 @@ impl Grid<CellState> {
         }
         NeighbourState { alive, dead }
     }
+    /// Randomly flips one cell
+    pub fn rand_flip(&mut self) {
+        let i = fastrand::usize(0..self.cells.len());
+        self.cells[i] = match self.cells[i] {
+            CellState::Alive(_) => CellState::Dead(self.dead_glyph),
+            CellState::Dead(_) => CellState::Alive(self.alive_glyph),
+        };
+    }
+    /// Randomly flips p*cell.len() cells. 
+    /// Can be use to keep the simulation interesting.
+    pub fn perturb_grid(&mut self, p: f32) {
+        let p = p.clamp(0.0, 1.0);
+        for _ in 0..((p * self.cells.len() as f32).floor() as i32) {
+            self.rand_flip();
+        }
+    }
 }
 
 impl Default for Grid<CellState> {
@@ -395,5 +411,61 @@ mod tests {
             })
             .collect();
         assert_eq!(unexpected_states.len(), 0);
+    }
+
+    #[test]
+    fn test_rand_flip() {
+        // Flip the only cell
+        let mut g = Grid::new_empty(1, 1);
+        g.rand_flip();
+        assert!(
+            g.try_get(Point { x: 0, y: 0 })
+                == Some(&CellState::Alive(g.alive_glyph))
+        );
+
+        // Flipping one cell should change the population by 1
+        let mut g = Grid::new_random(2, 1);
+        let flip0 = g.calculate_population();
+        g.rand_flip();
+        let flip1 = g.calculate_population();
+        assert!(
+            flip0.saturating_sub(flip1) == 1
+                || flip1.saturating_sub(flip0) == 1
+        );
+        g.rand_flip();
+        let flip2 = g.calculate_population();
+        assert!(
+            flip2.saturating_sub(flip1) == 1
+                || flip1.saturating_sub(flip2) == 1
+        );
+    }
+
+    #[test]
+    fn test_perturb_grid() {
+        // Flip the only cell
+        let mut g = Grid::new_empty(1, 1);
+        g.perturb_grid(1.0);
+        assert!(
+            g.try_get(Point { x: 0, y: 0 })
+                == Some(&CellState::Alive(g.alive_glyph))
+        );
+
+        // Flip one cell
+        let mut g = Grid::new_empty(10, 10);
+        let perturb0 = g.calculate_population();
+        g.perturb_grid(0.01);
+        let perturb1 = g.calculate_population();
+        assert!(
+            perturb0.saturating_sub(perturb1) == 1
+                || perturb1.saturating_sub(perturb0) == 1
+        );
+
+        // Flip one cell
+        g.perturb_grid(0.01);
+        let perturb2 = g.calculate_population();
+        assert!(
+            perturb1.saturating_sub(perturb2) == 1
+                || perturb2.saturating_sub(perturb1) == 1
+        );
     }
 }

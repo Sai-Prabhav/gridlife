@@ -73,6 +73,7 @@ impl App {
             KeyCode::Char('r') => self.run_simulation(),
             KeyCode::Char('s') => self.stop_simulation(),
             KeyCode::Char('n') => self.cycle(),
+            KeyCode::Char('p') => self.perturb(),
             KeyCode::Char('?') => self.random_grid(),
             _ => {}
         }
@@ -96,6 +97,10 @@ impl App {
         self.grid.update_states();
         self.cycles = 0;
     }
+
+    fn perturb(&mut self) {
+        self.grid.perturb_grid(0.05);
+    }
 }
 
 impl Widget for &App {
@@ -112,6 +117,8 @@ impl Widget for &App {
             "<n>".blue().bold(),
             " Regenerate".into(),
             "<?>".blue().bold(),
+            " Perturb".into(),
+            "<p>".blue().bold(),
             " Population: ".into(),
             format!("{}", self.population).red().bold(),
             " Cycles: ".into(),
@@ -146,20 +153,21 @@ mod tests {
     #[test]
     fn render() {
         let app = App::default();
-        let mut buf = Buffer::empty(Rect::new(0, 0, 100, 4));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 111, 4));
 
         app.render(buf.area, &mut buf);
         let mut expected = Buffer::with_lines(vec![
-        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Game of Life ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-        "┃                                                                                                  ┃",
-        "┃                                                                                                  ┃",
-        "┗━━━━━━━━━ Quit <Q>  Run<r> Stop<s> Single Cycle<n> Regenerate<?> Population: 0 Cycles: 0 ━━━━━━━━━┛",
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Game of Life ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+        "┃                                                                                                             ┃",
+        "┃                                                                                                             ┃",
+        "┗━━━━━━━━━ Quit <Q>  Run<r> Stop<s> Single Cycle<n> Regenerate<?> Perturb<p> Population: 0 Cycles: 0 ━━━━━━━━━┛",
         ]);
         let title_style = Style::new().bold();
         let counter_style = Style::new().red().bold();
         let key_style = Style::new().blue().bold();
+
         // Game of Life
-        expected.set_style(Rect::new(43, 0, 14, 1), title_style);
+        expected.set_style(Rect::new(48, 0, 14, 1), title_style);
         // <Q>
         expected.set_style(Rect::new(16, 3, 4, 1), key_style);
         // <r>
@@ -168,12 +176,14 @@ mod tests {
         expected.set_style(Rect::new(32, 3, 3, 1), key_style);
         //<n>
         expected.set_style(Rect::new(48, 3, 3, 1), key_style);
-        //<?>
+        //<p>
         expected.set_style(Rect::new(62, 3, 3, 1), key_style);
+        //<?>
+        expected.set_style(Rect::new(73, 3, 3, 1), key_style);
         // 0
-        expected.set_style(Rect::new(78, 3, 1, 1), counter_style);
+        expected.set_style(Rect::new(89, 3, 1, 1), counter_style);
         // 0
-        expected.set_style(Rect::new(88, 3, 2, 1), counter_style);
+        expected.set_style(Rect::new(99, 3, 2, 1), counter_style);
         assert_eq!(buf, expected);
     }
 
